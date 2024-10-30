@@ -1,0 +1,75 @@
+/* 푸터 영역 설정 */
+footer {
+    background-color: #222; /* 배경색을 더 어두운 회색(#222)으로 설정 */
+    color: white; /* 푸터 내부 텍스트 색상을 흰색으로 설정 */
+    padding: 20px 0; /* 상하 20px의 패딩을 추가하여 내부 요소에 공간 확보 */
+    text-align: center; /* 모든 텍스트와 요소들을 중앙 정렬 */
+    position: absolute; /* 푸터를 페이지 하단에 고정 */
+    bottom: 0; /* 푸터가 페이지 하단에 붙도록 설정 */
+    width: 100%; /* 푸터가 화면 전체 너비를 차지하도록 설정 */
+    height: auto; /* 푸터의 높이는 자동으로 조절 */
+}
+
+/* 페이지가 전체 높이를 차지하도록 설정 */
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+/* 메인 콘텐츠 영역이 푸터를 밀어내지 않도록 설정 */
+.main-content {
+    min-height: 100vh; /* 전체 화면 높이에서 푸터를 제외한 나머지 공간을 차지 */
+    padding-bottom: 60px; /* 푸터 높이만큼 하단 패딩을 추가 */
+}
+
+/* 푸터 텍스트 스타일 */
+.footer-container p {
+    margin: 0; /* 텍스트 위아래의 여백 제거 */
+    font-size: 1.1rem; /* 텍스트 크기를 조금 더 키움 */
+    color: white; /* 텍스트 색상을 흰색으로 설정 */
+     /* 텍스트를 굵게 설정 */
+}
+
+/* 푸터 텍스트 스타일 */
+.footer-container p {
+    margin: 0; /* 텍스트 위아래의 여백 제거 */
+    font-size: 1rem; /* 텍스트 크기를 1rem로 설정 */
+}
+
+/* 네비게이션 메뉴 스타일 */
+.footer-container nav ul {
+    list-style: none; /* 기본 리스트 스타일(불릿포인트 등) 제거 */
+    margin: 10px 0 0; /* 상단에 10px의 여백을 추가 */
+    padding: 0; /* 리스트의 기본 패딩을 제거 */
+    display: flex; /* 플렉스 박스를 사용하여 리스트 아이템을 수평으로 배치 */
+    justify-content: center; /* 중앙에 네비게이션 메뉴 배치 */
+}
+
+/* 네비게이션 메뉴 항목 스타일 */
+.footer-container nav ul li {
+    margin: 0 15px; /* 각 리스트 항목 간 좌우 간격을 15px로 설정 */
+}
+
+/* 네비게이션 링크 스타일 */
+.footer-container nav ul li a {
+    color: #ccc; /* 링크 색상을 밝은 회색으로 설정 */
+    text-decoration: none; /* 기본 밑줄 스타일 제거 */
+    transition: color 0.3s ease; /* 마우스를 올릴 때 색상이 부드럽게 변하도록 설정 */
+}
+
+/* 링크에 마우스를 올렸을 때 스타일 */
+.footer-container nav ul li a:hover {
+    color: #fff; /* 마우스를 올렸을 때 링크 색상을 흰색으로 변경 */
+}
+
+/* 반응형 디자인: 화면 크기가 작아졌을 때 적용 */
+@media (max-width: 768px) {
+    .footer-container nav ul {
+        flex-direction: column; /* 리스트 항목을 수직으로 배치하여 모바일에 적합하게 설정 */
+    }
+
+    .footer-container nav ul li {
+        margin: 10px 0; /* 각 항목 간의 간격을 위아래로 10px 추가 */
+    }
+}

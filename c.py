@@ -1,2 +1,2 @@
-def b(x,y):
+def c(x,y):
     return x*y

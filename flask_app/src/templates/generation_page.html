@@ -1,0 +1,27 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="container">
+    <section class="main-section">
+        <div class="card shadow-lg p-4" style="border-radius: 15px;">
+            <h2 class="text-center title-text">심볼 로고 생성기</h2>
+            <div class="mb-3">
+                <label for="logoDescription" class="form-label"></label>
+                <input 
+                    type="text" 
+                    class="form-control" 
+                    id="logoDescription" 
+                    placeholder="로고 설명 입력"
+                >
+            </div>
+            <button 
+                class="btn btn-primary btn-block" 
+                type="button"
+                onclick="alert('생성 시작!')"
+            >
+                생성 시작
+            </button>
+        </div>
+    </section>
+</div>
+{% endblock %}

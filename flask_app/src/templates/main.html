@@ -19,12 +19,12 @@
     <p>Generate your custom symbol logos with our AI-powered tool.</p>
     <div class="button-container">
         {% if session['user_id'] %}
-            <button class="btn btn-primary btn-lg" onclick="location.href='/generate'">이미지 생성하러 가기</button>
+        <button class="btn btn-lg custom-button" onclick="location.href='/generate'">Logo Generate</button>
         {% else %}
             <div id="kakao" class="kakao_button">
             
                 <a href="/authorize">
-                <img src="/static/img/kakao_login_medium_narrow.png" alt="kakao oauth" />
+                <img src="/static/img/kakao_login_medium_wide.png" alt="kakao oauth" />
                 </a>
             </div>
         {% endif %}

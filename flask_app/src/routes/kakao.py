@@ -1,6 +1,6 @@
 import os
 import requests, logging
-
+from model import db
 from flask import Flask, Blueprint, request, redirect, jsonify
 
 kakao = Blueprint('kakao', __name__)
@@ -10,7 +10,7 @@ redirect_uri = os.getenv('REDIRECT_URI')
 # 카카오로 부터 인가코드 받기
 @kakao.route('/authorize')
 def get_auth_code() :
-    auth_url = f'https://kauth.kakao.com/oauth/authorize?response_type=code&client_id={client_id}&redirect_uri={redirect_uri}&prompt=select_account'
+    auth_url = f'https://kauth.kakao.com/oauth/authorize?response_type=code&client_id={client_id}&redirect_uri={redirect_uri}&prompt=none'
     # 인가코드 받는 페이지로 리다이렉트 하고 난 후 
     # 코드 발급 후 카카오 디벨롭에서 설정한 url로 리다이렉트함
     return redirect(auth_url)
@@ -36,10 +36,13 @@ def access_token() :
         return redirect("/login")
 
     # Access Token 꺼내기
-    access_token = res.json()["access_token"] 
+    access_token = res.json()["access_token"]
     
     # 사용자구분을 위해 id 값을 추출
     user_id = getUserInfo(access_token)["id"]
+    
+    # db 저장
+    db.signUser(user_id)
 
     return redirect(f"/getSession?user_id={user_id}&access_token={access_token}")
     

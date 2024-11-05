@@ -75,11 +75,12 @@
     background-color: #45a049;
   }
   .mainBody {
-    margin-top: 25%;
+    margin-top: 10%;
   }
 
   .Logo {
     margin-left: 10px;
+    margin-right: 6px;
   }
 
 
@@ -99,10 +100,36 @@
     color: #95A5A6; /* 콤보박스 호버 시 색상 (밝은 그레이) */
   }
 
+  .custom-button {
+    background: linear-gradient(135deg, #2c3e50, #4a6580); /* 그라데이션 배경 */
+    color: white; /* 텍스트 색상 */
+    padding: 13px 50px; /* 위아래, 좌우 여백 */
+    font-size: 1.5rem; /* 글자 크기 */
+    border-radius: 50px; /* 둥근 모서리 */
+    border: none; /* 기본 테두리 제거 */
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* 그림자 효과 */
+    transition: all 0.3s ease; /* 애니메이션 효과 */
+    cursor: pointer; /* 커서 포인터 */
+}
+
+.custom-button:hover {
+    background: linear-gradient(135deg, #a6b3bf, #84a0bd); /* 호버 시 배경 색상 변경 */
+    transform: translateY(-2px); /* 버튼이 살짝 올라가는 효과 */
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3); /* 호버 시 그림자 강조 */
+}
+
+.custom-button:focus {
+    outline: none; /* 포커스 시 테두리 제거 */
+}
+
   @media (max-width: 992px) { 
     .end {
         display: flex; 
         justify-content: center; 
         width: 100%;
     }
+
+    .mainBody {
+      margin-top: 20%; 
+  }
   }

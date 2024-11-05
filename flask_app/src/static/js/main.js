@@ -8,3 +8,7 @@ function navigate() {
         window.location.href = selectedValue;
     }
 }
+
+$(document).ready(function(){
+    $('[data-toggle="tooltip"]').tooltip();
+});

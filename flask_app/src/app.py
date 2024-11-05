@@ -1,8 +1,9 @@
 import os
 from flask import Flask, render_template, session, redirect,Response, request
 from datetime import timedelta
-from routes.main import  main
+from routes.main import main
 from routes.kakao import kakao
+from functools import wraps
 
 app = Flask(__name__)
 
@@ -31,6 +32,8 @@ def kakao_login_callback() :
     
     else :
         redirect("/login")
+
+
 
 
 

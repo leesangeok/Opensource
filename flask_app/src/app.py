@@ -1,17 +1,39 @@
-from flask import Flask, render_template
+import os
+from flask import Flask, render_template, session, redirect,Response, request
+from datetime import timedelta
+from routes.main import  main
+from routes.kakao import kakao
+
 app = Flask(__name__)
 
-@app.route('/')
-def hello():
-    return render_template('main.html')
 
-@app.route('/generate')
-def generateLogoImage():
-    return render_template('generation_page.html')
+app.secret_key = os.getenv("SECRET_KEY")
+
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=30)
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+
+# blueprint 등록
+app.register_blueprint(kakao)
+app.register_blueprint(main)
+
+
+@app.route('/getSession')
+# 카카오 user_id로 사용자 고유id 세션 생성
+def kakao_login_callback() :
+    user_id = request.args.get("user_id")
+    access_token = request.args.get("access_token")
+
+    if user_id : 
+        session['user_id'] = user_id
+        session['access_token'] = access_token
+        return redirect("/")
     
-@app.route('/myPage')
-def myPage():
-    return render_template('myPage.html')
+    else :
+        redirect("/login")
+
+
+
 if __name__ == '__main__':
     app.run(debug=True)
 

@@ -1,11 +1,33 @@
 {% extends "layout.html "%}
 
+
+{% block select %}
+<select id="page-selector" class="form-control" aria-label="Page selector"   onchange="navigate()">
+    <option value="/" selected>Home</option>
+    <option value="/generate" >Generation</option>
+    <option value="/myPage">My Page</option>
+    {% if session['user_id'] %}
+      <option value="/logout">Logout</option>
+    {% endif %}
+</select>
+{% endblock %}
+
+
 {% block content %}
 <section class="main-section">
     <h2>Welcome to the Symbol Logo Generator</h2>
     <p>Generate your custom symbol logos with our AI-powered tool.</p>
     <div class="button-container">
-        <button class="btn btn-primary btn-lg" onclick="handleButtonClick()">이미지 생성하러 가기</button>
+        {% if session['user_id'] %}
+            <button class="btn btn-primary btn-lg" onclick="location.href='/generate'">이미지 생성하러 가기</button>
+        {% else %}
+            <div id="kakao" class="kakao_button">
+            
+                <a href="/authorize">
+                <img src="/static/img/kakao_login_medium_narrow.png" alt="kakao oauth" />
+                </a>
+            </div>
+        {% endif %}
     </div>
 </section>
 {% endblock %}

@@ -1,5 +1,18 @@
 {% extends "layout.html" %}
 
+
+{% block select %}
+<select id="page-selector" class="form-control" aria-label="Page selector"   onchange="navigate()">
+    <option value="/" >Home</option>
+    <option value="/generate" >Generation</option>
+    <option value="/myPage" selected>My Page</option>
+    {% if session['user_id'] %}
+      <option value="/logout">Logout</option>
+    {% endif %}
+</select>
+{% endblock %}
+
+
 {% block content %}
 <div class="container">
     <section class="main-section">

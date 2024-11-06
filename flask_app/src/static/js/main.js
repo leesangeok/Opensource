@@ -9,6 +9,23 @@ function navigate() {
     }
 }
 
-$(document).ready(function(){
-    $('[data-toggle="tooltip"]').tooltip();
-});
+
+
+function sendLogoDescription() {
+    const logoDescription = document.getElementById("logoDescription").value;
+    
+    fetch("/logoGenerate", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ description: logoDescription })
+    })
+    .then(response => {
+        if (!response.ok) throw new Error("Network response was not ok");
+        return response.json();
+    })
+    .catch(error => {
+        console.error("Error:", error);
+    });
+}

@@ -11,9 +11,9 @@ def hello():
 
     return render_template('main.html')
 
-@main.route('/login')
-def login():
-    return render_template('login.html')
+# @main.route('/login')
+# def login():
+#     return render_template('login.html')
 
 @main.route('/logout')
 def logout():

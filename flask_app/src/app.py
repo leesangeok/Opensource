@@ -12,10 +12,12 @@ app = Flask(__name__)
 
 app.secret_key = os.getenv("SECRET_KEY")
 
-app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=30)
+# 세션 설정 
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=30) # 세션 expire 30분
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 
+# log 레벨을 INFO로 설정
 logging.basicConfig(level=logging.INFO)
 
 # blueprint 등록
@@ -35,7 +37,7 @@ def kakao_login_callback() :
         return redirect("/")
     
     else :
-        redirect("/login")
+        redirect("/")
 
 
 

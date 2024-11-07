@@ -10,7 +10,7 @@ redirect_uri = os.getenv('REDIRECT_URI')
 # 카카오로 부터 인가코드 받기
 @kakao.route('/authorize')
 def get_auth_code() :
-    auth_url = f'https://kauth.kakao.com/oauth/authorize?response_type=code&client_id={client_id}&redirect_uri={redirect_uri}&prompt=none'
+    auth_url = f'https://kauth.kakao.com/oauth/authorize?response_type=code&client_id={client_id}&redirect_uri={redirect_uri}&prompt=select_account'
     # 인가코드 받는 페이지로 리다이렉트 하고 난 후 
     # 코드 발급 후 카카오 디벨롭에서 설정한 url로 리다이렉트함
     return redirect(auth_url)
@@ -33,7 +33,7 @@ def access_token() :
 
     # Access Token 요청 실패시 로그인 페이지로 이동
     if res.status_code != 200 :
-        return redirect("/login")
+        return redirect("/")
 
     # Access Token 꺼내기
     access_token = res.json()["access_token"]
@@ -57,7 +57,7 @@ def getUserInfo(access_Token) :
     # 사용자 정보 가져오기 실패할 경우 로그인 페이지로 이동
     if userInfo.status_code != 200 :
         logging.info("사용자 정보 획득 실패")
-        return redirect("/login")
+        return redirect("/")
     
     return userInfo.json()
 

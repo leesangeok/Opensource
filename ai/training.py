@@ -10,10 +10,9 @@ from tqdm import tqdm
 from datetime import datetime
 import time
 import subprocess
+import csv
 
 # GPU 메모리 사용 설정
-
-
 def is_gpu_available(min_free_memory=20000):
     """
     GPU가 사용 가능한지 확인하는 함수.
@@ -38,11 +37,18 @@ def is_gpu_available(min_free_memory=20000):
 print("Waiting for a free GPU...")
 while not is_gpu_available():
     print("Waiting.." + datetime.now().strftime("%Y%m%d_%H%M%S"))
-    time.sleep(60)  # 60초 대기 후 다시 확인
+    time.sleep(10)  # 10초 대기 후 다시 확인
 
 print("GPU is now available. Starting training...")
 
-torch.cuda.set_per_process_memory_fraction(0.7, device=torch.cuda.current_device())
+# CSV 파일 초기화
+csv_file_path = "training_loss_log.csv"
+if not os.path.exists(csv_file_path):
+    with open(csv_file_path, mode="w", newline="") as file:
+        writer = csv.writer(file)
+        writer.writerow(["Epoch", "Loss"])  # 헤더 작성
+
+# torch.cuda.set_per_process_memory_fraction(0.7, device=torch.cuda.current_device())
 os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
 # 저장된 모델 경로
@@ -103,39 +109,97 @@ train_image_root = "/home/oss_1/data/240.심볼(로고) 생성 데이터/01-1.�
 train_label_root = "/home/oss_1/data/240.심볼(로고) 생성 데이터/01-1.정식개방데이터/Training/02.라벨링데이터"
 
 train_dataset = CustomDataset(train_image_root, train_label_root, transform=transform)
-train_dataloader = DataLoader(train_dataset, batch_size=16, shuffle=True, num_workers= 8, pin_memory=True)
+train_dataloader = DataLoader(train_dataset, batch_size=4, shuffle=True, num_workers= 8, pin_memory=True)
 
-# 텍스트 인코더만 가져오기
+
 text_encoder = pipe.text_encoder
+transformer = pipe.transformer
 
+vae = pipe.vae.to("cuda")
+scheduler = pipe.scheduler
 # 옵티마이저 및 Accelerator 설정
-optimizer = AdamW(text_encoder.parameters(), lr=1e-5)
-accelerator = Accelerator()
-text_encoder, optimizer = accelerator.prepare(text_encoder, optimizer)
+optimizer = AdamW(
+    list(pipe.text_encoder.parameters()) +
+    list(pipe.transformer.parameters()), 
+    lr=1e-5
+)
 
+# 분산 학습과 혼합 정밀도 학습을 간소화
+accelerator = Accelerator()
+text_encoder, transformer, optimizer = accelerator.prepare(text_encoder, transformer, optimizer)
+train_dataloader = accelerator.prepare(train_dataloader)
+
+criterion = torch.nn.MSELoss()
 # 학습 루프
 num_epochs = 3
 for epoch in range(num_epochs):
+    # 학습 모드 설정
+    transformer.train()
+    text_encoder.train()
+
     for images, captions in tqdm(train_dataloader, desc=f"Epoch {epoch + 1}/{num_epochs}", unit="batch"):
-        images = images.to(accelerator.device)
+        images = images.to(accelerator.device, dtype=torch.bfloat16)
+        print(captions)
+        inputs = pipe.tokenizer(captions, return_tensors="pt", padding=True, truncation=True)
+        input_ids = inputs["input_ids"].to(accelerator.device)
+        print(input_ids.shape)
+        attention_mask = inputs["attention_mask"].to(accelerator.device)
 
-        # 텍스트 인코딩
-        text_inputs = pipe.tokenizer(captions, return_tensors="pt", padding=True, truncation=True)
-        text_embeddings = text_encoder(text_inputs.input_ids.to(accelerator.device))[0]
+        # 2. 텍스트 임베딩 생성
+        text_embeddings = pipe.text_encoder(input_ids, attention_mask = attention_mask).last_hidden_state  # 텍스트 인코딩을 통해 텍스트 임베딩 생성
+        print("text_embeddings shape:", text_embeddings.shape)  # 디버깅용
+        
+        context_projection_layer = torch.nn.Linear(text_embeddings.size(-1), 1536).to(accelerator.device, dtype=torch.bfloat16)
+        encoder_hidden_states = context_projection_layer(text_embeddings)
+        print("encoder_hidden_states shape:", encoder_hidden_states.shape)  # 디버깅용
 
-        # 임시 손실 계산 (예시로 MSE 사용, 필요에 맞게 수정 가능)
-        noise = torch.randn_like(text_embeddings).to(accelerator.device)
-        loss = torch.nn.functional.mse_loss(text_embeddings, noise)
 
-        # 역전파 및 옵티마이저 업데이트
-        accelerator.backward(loss)
-        optimizer.step()
-        optimizer.zero_grad()
+        # VAE로 이미지를 잠재 공간으로 인코딩
+        latent_vectors = vae.encode(images).latent_dist.sample() * 0.18215
+
+        # 노이즈 생성
+        noise = torch.randn_like(latent_vectors)
+        # 노이즈 추가
+        noised_latent_vectors = latent_vectors + noise
+
+        # 학습 루프 내에서 스케줄러를 사용해 노이즈 제거 단계 수행
+        for t in scheduler.timesteps:
+
+            timestep = torch.tensor([t], dtype=torch.float32).to(accelerator.device)
+            # 선형 변환 레이어를 정의하고 bfloat16 타입으로 변환
+            # projection_layer = torch.nn.Linear(text_embeddings.size(-1), 2048).to(accelerator.device, dtype=torch.bfloat16)
+            # pooled_projections = projection_layer(text_embeddings.mean(dim=1))
+            
+            # print("pooled_projections shape:", pooled_projections.shape)
+            # Transformer를 사용해 노이즈 제거 예측
+            outputs = transformer(
+                        hidden_states=noised_latent_vectors,
+                        encoder_hidden_states=encoder_hidden_states,
+                        timestep=timestep,
+                        # pooled_projections=pooled_projections  # 추가된 인자
+                    )
+            
+            # 스케줄러를 통해 노이즈 제거 단계 진행
+            noised_latent_vectors = scheduler.step(outputs, t, noised_latent_vectors).prev_sample
+
+        
+       
+        # 4. 손실 계산
+        loss = criterion(outputs, noise)  # 모델의 출력과 실제 노이즈 간의 손실 계산
+        
+        # 5. 역전파 및 옵티마이저 업데이트
+        optimizer.zero_grad()  # 이전의 그래디언트를 초기화
+        accelerator.backward(loss)  # 손실 함수에 대해 역전파 수행
+        optimizer.step()  # 옵티마이저를 사용해 모델의 파라미터를 업데이트
 
     print(f"Epoch {epoch + 1}/{num_epochs}, Loss: {loss.item()}")
+       # 에포크마다 손실 값을 CSV에 기록
+    with open(csv_file_path, mode="a", newline="") as file:
+        writer = csv.writer(file)
+        writer.writerow([epoch + 1, loss.item()])
 
-print("Fine-tuning Complete!")
+print("Complete!")
 
 # 학습 종료 후 모델 저장
-save_path = "/home/oss_1/MinsuKim/stable-diffusion-3.5-model_" + datetime.now().strftime("%Y%m%d_%H%M%S")
+save_path = save_path + "_" + datetime.now().strftime("%Y%m%d_%H%M%S")
 pipe.save_pretrained(save_path)

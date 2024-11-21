@@ -2,6 +2,7 @@ from pymongo import MongoClient
 from pymongo.errors import PyMongoError
 from gridfs import GridFS
 from flask import Response, request
+from datetime import datetime
 import os
 import logging 
 
@@ -67,7 +68,9 @@ def updateUserLogoImage(user_id, logo_id) :
     try :
         result = collection.update_one(
             {'_id': user_id},  # 조건: user_id가 일치하는 사용자 찾기
-            {'$push': {'logo': [{'logo_id': logo_id}]}}  # 로고 정보 업데이트 
+            {'$push': {'logo': [{'logo_id': logo_id,
+                                "createDate" : datetime.now()}]}}  # 로고 정보 업데이트 
+            
         )
 
         if result.modified_count > 0:

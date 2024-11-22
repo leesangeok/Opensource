@@ -2,7 +2,10 @@ import os
 import requests
 from decorators import login_required
 from flask import Flask, Blueprint, request, redirect, jsonify,render_template, session
+from logo_model import model
 import logging
+from model import db
+
 
 logo_generate = Blueprint("logo_generate", __name__)
 
@@ -11,11 +14,18 @@ logo_generate = Blueprint("logo_generate", __name__)
 @logo_generate.route("/logoGenerate", methods=['POST'])
 @login_required
 def RequestLogo() :
-    prompt = request.get_json()
-    data = prompt['description']
+    data = request.get_json()
+    user_id = session["user_id"]
+    prompt = data['description']
 
     logging.info("[id=%s]전송받은 프롬프트 : %s" , session['user_id'], data)
 
+    result = model.generate_logo(user_id, prompt)
+
+    if result : 
+        return jsonify(db.findByUserId(user_id)), 200
+
+    
     """
     생성 프로세스
     1. 모델에 프롬프트 전송

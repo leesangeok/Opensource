@@ -1,6 +1,6 @@
 from pymongo import MongoClient
 from pymongo.errors import PyMongoError
-from gridfs import GridFS
+
 from flask import Response, request
 from datetime import datetime
 import os
@@ -14,7 +14,7 @@ client = MongoClient(mongo_connect)
 
 db = client.get_database("LogoGen")
 collection = db.get_collection("users")
-fs = GridFS(db) 
+
 
 
 
@@ -46,41 +46,26 @@ def insert_user(user_id) :
     return collection.insert_one({"user_id" : user_id})
     
 
-# 해당 함수는 1개의 logo_id에 대한 1개의 로고 이미지 조회
-def findByImageId(logo_id):
-    return fs.get(logo_id) # fs.get(ObjectId(logo_id 배열)) 이렇게 id만 담은 배열 자체를 넘겨 한번에 조회 가능 
-    #logo_data =  fs.get(ObjectId(logo_id 배열))
-    # logos (빈 배열) = logo_data.read() (파일 내용 읽기 함수)
-
-
-
-
-# 이미지 데이터를 GridFS에 저장하고 logo_id 반환
-def upload_logoImage(image_data) :
-    logo = image_data
-    logo_id = fs.put(logo, filename=logo.name)
-    return logo_id
-
-
-# DB에 Logo Image Id 값 저장 
-def updateUserLogoImage(user_id, logo_id) :
-
+def insert_logo_Info(user_id, logo_src, logo_name) :
     try :
         result = collection.update_one(
-            {'_id': user_id},  # 조건: user_id가 일치하는 사용자 찾기
-            {'$push': {'logo': [{'logo_id': logo_id,
-                                "createDate" : datetime.now()}]}}  # 로고 정보 업데이트 
-            
+            {"_id" : user_id},
+            {"$push" : {"logo" : [{"logo_name" : logo_name,
+                                    "logo_src" : logo_src,
+                                   "createDate" : datetime.now()}]}}
         )
 
         if result.modified_count > 0:
-            logging.info("[id= %s] logo DB 저장 성공 [logo_id = %s]", user_id, logo_id)
+            logging.info("[id= %s] logo DB 저장 성공 [logo_src = %s] [logo_name = %s]", user_id, logo_src, logo_name)
+            return True
         else:
-            logging.error("[id= %s] logo DB 저장 실패 [logo_id = %s]", user_id, logo_id)
-
+            logging.error("[id= %s] logo DB 저장 실패 [logo_src = %s] [logo_name = %s]", user_id, logo_src, logo_name)
+            return False
     except PyMongoError as e:
-        logging.error("[id= %s] [logo_id = %s] DB Error : %s", user_id, logo_id, e)
-        return
+        logging.error("[id= %s] [logo_src = %s] [logo_name = %s]DB Error : %s", user_id, logo_src, logo_name, e)
+        return False
+    
+
 
 
 

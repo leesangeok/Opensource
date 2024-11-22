@@ -2,3 +2,8 @@ Flask==3.0.3
 pymongo==4.10.1
 python-dotenv==1.0.1
 requests==2.31.0
+torch==2.5.1
+numpy==1.26.4
+diffusers==0.31.0
+transformers==4.46.3
+accelerate==1.1.1

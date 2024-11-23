@@ -8,9 +8,11 @@ from PIL import Image
 import csv
 from tqdm import tqdm
 from torchvision.transforms.functional import to_pil_image
+import urllib.parse
+import hashlib
 
 # GPU 설정
-os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 torch.cuda.set_device(0)
 
 # 모델 로드 및 float32로 설정
@@ -22,7 +24,7 @@ pipe.scheduler = DDIMScheduler.from_config(pipe.scheduler.config)
 scheduler = pipe.scheduler
 
 # 스케줄러에 timesteps 설정 (Inference steps 설정)
-num_inference_steps = 50  # 원하는 inference 스텝 수로 설정하세요
+num_inference_steps = 150  # 원하는 inference 스텝 수로 설정하세요
 scheduler.set_timesteps(num_inference_steps)
 
 # 모델의 구성 요소 추출
@@ -51,15 +53,6 @@ if not os.path.exists(csv_file_path):
     with open(csv_file_path, mode="w", newline="") as file:
         writer = csv.writer(file)
         writer.writerow(["Epoch", "Step", "Loss"])
-
-# 데이터셋 클래스 정의 (생략)
-
-# 이미지 전처리 설정
-transform = transforms.Compose([
-    transforms.Resize((512, 512)),
-    transforms.ToTensor(),
-    transforms.Normalize([0.5]*3, [0.5]*3)
-])
 
 # 데이터셋 클래스 정의
 class CustomDataset(Dataset):
@@ -101,9 +94,9 @@ class CustomDataset(Dataset):
 
         return image, label
 
-# 이미지 전처리 설정 (512x512 크기로 조정, 정규화)
+# 이미지 전처리 설정
 transform = transforms.Compose([
-    transforms.Resize((512, 512)),
+    transforms.Resize((1024, 1024)),
     transforms.ToTensor(),
     transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])  # 각 채널에 대해 정규화
 ])
@@ -113,7 +106,7 @@ train_image_root = "/home/oss_1/data/240.심볼(로고) 생성 데이터/01-1.�
 train_label_root = "/home/oss_1/data/240.심볼(로고) 생성 데이터/01-1.정식개방데이터/Training/02.라벨링데이터"
 
 train_dataset = CustomDataset(train_image_root, train_label_root, transform=transform)
-train_dataloader = DataLoader(train_dataset, batch_size=8, shuffle=True, num_workers=8)
+train_dataloader = DataLoader(train_dataset, batch_size=2, shuffle=True, num_workers=8)
 
 
 # 학습 루프 설정
@@ -186,22 +179,34 @@ for epoch in range(epochs):
                     # VAE 디코더를 통해 이미지 복원
                     reconstructed_latents = reconstructed_latents / vae.config.scaling_factor
                     reconstructed_images = vae.decode(reconstructed_latents).sample
-
+                    
                     # 이미지 후처리 및 저장
                     for idx, reconstructed_image in enumerate(reconstructed_images):
                         # 이미지 범위를 [-1, 1]에서 [0, 1]로 변환
                         reconstructed_image = (reconstructed_image / 2 + 0.5).clamp(0, 1)
-
+                    
                         # 텐서를 CPU로 이동하고 PIL 이미지로 변환
                         reconstructed_image = reconstructed_image.cpu()
                         pil_image = to_pil_image(reconstructed_image)
-
+                    
+                        # 캡션을 파일명에 사용하기 위해 처리
+                        caption = captions[idx]
+                    
+                        # 파일명에 사용할 수 없는 문자 제거 및 공백 처리
+                        # 여기서는 파일명에 안전한 방식으로 URL 인코딩을 사용합니다.
+                        sanitized_caption = urllib.parse.quote(caption, safe='')
+                    
+                        # 파일명 길이 제한 (예: 100자로 제한)
+                        max_filename_length = 100
+                        if len(sanitized_caption) > max_filename_length:
+                            sanitized_caption = sanitized_caption[:max_filename_length]
+                    
                         # 이미지 저장 디렉토리 생성
                         save_dir = f"reconstructed_images/epoch_{epoch+1}"
                         os.makedirs(save_dir, exist_ok=True)
 
                         # 이미지 파일명 지정 및 저장
-                        image_filename = f"{save_dir}/step_{step}_sample_{idx}.png"
+                        image_filename = f"{save_dir}/step_{step}_sample_{idx}_{sanitized_caption}.png"
                         pil_image.save(image_filename)
 
                 pbar.set_postfix({'loss': loss.item()})

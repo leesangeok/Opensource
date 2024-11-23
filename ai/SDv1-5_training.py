@@ -1,26 +1,35 @@
 import torch
-from diffusers import DiffusionPipeline
+from diffusers import DiffusionPipeline, DDIMScheduler
 import os
 import torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
 from PIL import Image
 import csv
+from tqdm import tqdm
+from torchvision.transforms.functional import to_pil_image
 
-# GPU 설정: CUDA_VISIBLE_DEVICES를 먼저 설정합니다.
+# GPU 설정
 os.environ["CUDA_VISIBLE_DEVICES"] = "1"
-torch.cuda.set_device(0)  # 여기서 0은 CUDA_VISIBLE_DEVICES에서 지정한 첫 번째 GPU를 의미합니다.
+torch.cuda.set_device(0)
 
-# 모델 로드 및 float16로 설정
-pipe = DiffusionPipeline.from_pretrained("./stable-diffusion-v1-5", torch_dtype=torch.float16)
+# 모델 로드 및 float32로 설정
+pipe = DiffusionPipeline.from_pretrained("./stable-diffusion-v1-5", torch_dtype=torch.float32)
 pipe = pipe.to("cuda")
+
+# 기존 스케줄러를 DDIMScheduler로 교체
+pipe.scheduler = DDIMScheduler.from_config(pipe.scheduler.config)
+scheduler = pipe.scheduler
+
+# 스케줄러에 timesteps 설정 (Inference steps 설정)
+num_inference_steps = 50  # 원하는 inference 스텝 수로 설정하세요
+scheduler.set_timesteps(num_inference_steps)
 
 # 모델의 구성 요소 추출
 unet = pipe.unet
 text_encoder = pipe.text_encoder
 tokenizer = pipe.tokenizer
-scheduler = pipe.scheduler
-vae = pipe.vae  # VAE를 추가로 가져옵니다.
+vae = pipe.vae
 
 # 모델을 학습 모드로 설정
 unet.train()
@@ -29,16 +38,28 @@ text_encoder.train()
 # Optimizer 설정
 optimizer = torch.optim.AdamW(
     list(unet.parameters()) + list(text_encoder.parameters()),
-    lr=1e-5,
+    lr=1e-6,  # 학습률을 낮춤
     weight_decay=1e-2
 )
+
+# AMP를 위한 GradScaler 생성
+scaler = torch.cuda.amp.GradScaler()
 
 # CSV 파일 초기화
 csv_file_path = "training_loss_log.csv"
 if not os.path.exists(csv_file_path):
     with open(csv_file_path, mode="w", newline="") as file:
         writer = csv.writer(file)
-        writer.writerow(["Epoch", "Step", "Loss"])  # 헤더 작성
+        writer.writerow(["Epoch", "Step", "Loss"])
+
+# 데이터셋 클래스 정의 (생략)
+
+# 이미지 전처리 설정
+transform = transforms.Compose([
+    transforms.Resize((512, 512)),
+    transforms.ToTensor(),
+    transforms.Normalize([0.5]*3, [0.5]*3)
+])
 
 # 데이터셋 클래스 정의
 class CustomDataset(Dataset):
@@ -84,7 +105,7 @@ class CustomDataset(Dataset):
 transform = transforms.Compose([
     transforms.Resize((512, 512)),
     transforms.ToTensor(),
-    transforms.Normalize([0.5], [0.5])  # VAE는 [-1, 1] 범위를 기대합니다.
+    transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])  # 각 채널에 대해 정규화
 ])
 
 # 데이터셋 및 DataLoader 생성
@@ -92,60 +113,101 @@ train_image_root = "/home/oss_1/data/240.심볼(로고) 생성 데이터/01-1.�
 train_label_root = "/home/oss_1/data/240.심볼(로고) 생성 데이터/01-1.정식개방데이터/Training/02.라벨링데이터"
 
 train_dataset = CustomDataset(train_image_root, train_label_root, transform=transform)
-train_dataloader = DataLoader(train_dataset, batch_size=1, shuffle=True, num_workers=8)
+train_dataloader = DataLoader(train_dataset, batch_size=8, shuffle=True, num_workers=8)
+
 
 # 학습 루프 설정
-epochs = 5  # 원하는 epoch 수로 변경하세요
+epochs = 5
 
 for epoch in range(epochs):
-    for step, (images, captions) in enumerate(train_dataloader):
-        # 이미지를 장치로 이동하고 dtype을 float16으로 변환
-        images = images.to("cuda").to(dtype=torch.float16)
+    print(f"Epoch {epoch+1}/{epochs}")
+    with tqdm(train_dataloader, desc="Training", unit="batch") as pbar:
+        for step, (images, captions) in enumerate(pbar):
+            images = images.to("cuda")
 
-        # 캡션 토크나이즈
-        inputs = tokenizer(
-            captions,
-            padding="max_length",
-            truncation=True,
-            max_length=tokenizer.model_max_length,
-            return_tensors="pt"
-        )
-        input_ids = inputs.input_ids.to("cuda")
+            inputs = tokenizer(
+                captions,
+                padding="max_length",
+                truncation=True,
+                max_length=tokenizer.model_max_length,
+                return_tensors="pt"
+            )
+            input_ids = inputs.input_ids.to("cuda")
 
-        # 캡션 인코딩
+            # 자동 혼합 정밀도 적용
+            with torch.cuda.amp.autocast():
+                # 캡션 인코딩
+                encoder_hidden_states = text_encoder(input_ids)[0]
 
-        encoder_hidden_states = text_encoder(input_ids)[0]
+                # 이미지 인코딩 (VAE)
+                with torch.no_grad():
+                    latents = vae.encode(images).latent_dist.sample()
+                    latents = latents * vae.config.scaling_factor
 
-        # 이미지 인코딩 (VAE)
-        with torch.no_grad():
-            latents = vae.encode(images).latent_dist.sample()
-            latents = latents * vae.config.scaling_factor  # 스케일링 팩터 적용
+                # 노이즈 추가 및 예측
+                noise = torch.randn_like(latents)
+                timesteps = torch.randint(0, scheduler.config.num_train_timesteps, (latents.shape[0],), device=latents.device).long()
+                noisy_latents = scheduler.add_noise(latents, noise, timesteps)
+                noise_pred = unet(noisy_latents, timesteps, encoder_hidden_states).sample
 
-        # 랜덤한 timestep 샘플링
-        noise = torch.randn_like(latents)
-        timesteps = torch.randint(0, scheduler.config.num_train_timesteps, (latents.shape[0],), device=latents.device).long()
+                # 손실 계산
+                loss = F.mse_loss(noise_pred, noise)
 
-        # 노이즈 추가
-        noisy_latents = scheduler.add_noise(latents, noise, timesteps)
+            # 역전파 및 옵티마이저 스텝
+            optimizer.zero_grad()
+            scaler.scale(loss).backward()
+            scaler.unscale_(optimizer)
+            torch.nn.utils.clip_grad_norm_(unet.parameters(), max_norm=1.0)
+            scaler.step(optimizer)
+            scaler.update()
 
-        # 노이즈 예측
-        noise_pred = unet(noisy_latents, timesteps, encoder_hidden_states).sample
+            # 로깅 및 이미지 복원
+            if step % 100 == 0:
+                with torch.no_grad():
+                    # 첫 번째 샘플만 처리 (또는 전체 배치 처리 가능 여부에 따라)
+                    idx = 0  # 또는 원하는 인덱스
 
-        # 손실 계산
-        loss = F.mse_loss(noise_pred, noise)
+                    # timestep은 스칼라 값이어야 합니다.
+                    t = timesteps[idx].item()
 
-        # 역전파 및 옵티마이저 스텝
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
+                    # 필요한 텐서 선택
+                    n_latent = noisy_latents[idx:idx+1]
+                    n_pred = noise_pred[idx:idx+1]
 
-        # 로깅
-        if step % 100 == 0:
-            print(f"Epoch {epoch} Step {step} Loss {loss.item()}")
-            # 손실을 CSV에 기록
-            with open(csv_file_path, mode="a", newline="") as file:
-                writer = csv.writer(file)
-                writer.writerow([epoch, step, loss.item()])
+                    # scheduler.step 호출
+                    scheduler_output = scheduler.step(
+                        model_output=n_pred,
+                        timestep=t,
+                        sample=n_latent,
+                        eta=0.0
+                    )
+                    reconstructed_latents = scheduler_output.prev_sample
 
-    # 각 epoch 이후 모델 체크포인트 저장
-    pipe.save_pretrained(f"stable-diffusion-v1-5-finetuned-epoch{epoch}")
+                    # VAE 디코더를 통해 이미지 복원
+                    reconstructed_latents = reconstructed_latents / vae.config.scaling_factor
+                    reconstructed_images = vae.decode(reconstructed_latents).sample
+
+                    # 이미지 후처리 및 저장
+                    for idx, reconstructed_image in enumerate(reconstructed_images):
+                        # 이미지 범위를 [-1, 1]에서 [0, 1]로 변환
+                        reconstructed_image = (reconstructed_image / 2 + 0.5).clamp(0, 1)
+
+                        # 텐서를 CPU로 이동하고 PIL 이미지로 변환
+                        reconstructed_image = reconstructed_image.cpu()
+                        pil_image = to_pil_image(reconstructed_image)
+
+                        # 이미지 저장 디렉토리 생성
+                        save_dir = f"reconstructed_images/epoch_{epoch+1}"
+                        os.makedirs(save_dir, exist_ok=True)
+
+                        # 이미지 파일명 지정 및 저장
+                        image_filename = f"{save_dir}/step_{step}_sample_{idx}.png"
+                        pil_image.save(image_filename)
+
+                pbar.set_postfix({'loss': loss.item()})
+                with open(csv_file_path, mode="a", newline="") as file:
+                    writer = csv.writer(file)
+                    writer.writerow([epoch+1, step, loss.item()])
+
+        # 각 epoch 이후 모델 체크포인트 저장
+        pipe.save_pretrained(f"stable-diffusion-v1-5-finetuned-epoch{epoch+1}")

@@ -152,8 +152,9 @@ for epoch in range(num_epochs):
         context_projection_layer = torch.nn.Linear(text_embeddings.size(-1), 1536).to(accelerator.device, dtype=torch.bfloat16)
         encoder_hidden_states = context_projection_layer(text_embeddings)
         print("encoder_hidden_states shape:", encoder_hidden_states.shape)  # 디버깅용
-
-
+        
+        batch_size, seq_len, hidden_dim = encoder_hidden_states.shape
+        encoder_hidden_states = encoder_hidden_states.view(-1, hidden_dim)  # (batch_size * seq_len, hidden_dim)
         # VAE로 이미지를 잠재 공간으로 인코딩
         latent_vectors = vae.encode(images).latent_dist.sample() * 0.18215
 
@@ -167,16 +168,16 @@ for epoch in range(num_epochs):
 
             timestep = torch.tensor([t], dtype=torch.float32).to(accelerator.device)
             # 선형 변환 레이어를 정의하고 bfloat16 타입으로 변환
-            # projection_layer = torch.nn.Linear(text_embeddings.size(-1), 2048).to(accelerator.device, dtype=torch.bfloat16)
-            # pooled_projections = projection_layer(text_embeddings.mean(dim=1))
+            projection_layer = torch.nn.Linear(text_embeddings.size(-1), 2048).to(accelerator.device, dtype=torch.bfloat16)
+            pooled_projections = projection_layer(text_embeddings.mean(dim=1))
             
-            # print("pooled_projections shape:", pooled_projections.shape)
+            print("pooled_projections shape:", pooled_projections.shape)
             # Transformer를 사용해 노이즈 제거 예측
             outputs = transformer(
                         hidden_states=noised_latent_vectors,
                         encoder_hidden_states=encoder_hidden_states,
                         timestep=timestep,
-                        # pooled_projections=pooled_projections  # 추가된 인자
+                        pooled_projections=pooled_projections  # 추가된 인자
                     )
             
             # 스케줄러를 통해 노이즈 제거 단계 진행

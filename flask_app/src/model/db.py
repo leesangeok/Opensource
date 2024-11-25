@@ -5,7 +5,10 @@ from flask import Response, request
 from datetime import datetime
 import os
 import logging 
+from dotenv import load_dotenv
 
+
+load_dotenv("key.env")
 username = os.getenv("USER")
 db_password = os.getenv("DB_PASSWORD")
 mongo_connect = f"mongodb+srv://{username}:{db_password}@logo.gyrbc.mongodb.net/?retryWrites=true&w=majority&appName=Logo"

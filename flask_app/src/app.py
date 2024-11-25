@@ -1,4 +1,5 @@
 import os
+from dotenv import load_dotenv
 from flask import Flask, render_template, session, redirect,Response, request
 from datetime import timedelta
 import routes.logo_generate, logging
@@ -9,7 +10,7 @@ from functools import wraps
 
 app = Flask(__name__)
 
-
+load_dotenv("key.env")
 app.secret_key = os.getenv("SECRET_KEY")
 
 # 세션 설정 

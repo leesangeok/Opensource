@@ -2,7 +2,10 @@ import os
 import requests, logging
 from model import db
 from flask import Flask, Blueprint, request, redirect, jsonify
+from dotenv import load_dotenv
 
+
+load_dotenv("key.env")
 kakao = Blueprint('kakao', __name__)
 client_id = os.getenv('CLIENT_ID')
 redirect_uri = os.getenv('REDIRECT_URI')

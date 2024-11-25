@@ -14,7 +14,7 @@ def generate_logo(user_id, prompt) :
 
     img_prompt = prompt #입력 프롬프트
     img_name = str(prompt + "ex") #저장 시 이미지 파일 이름
-    img_count = 3; #생성할 이미지 개수
+    img_count = 1; #생성할 이미지 개수
 
     imageList = pipe(
     img_prompt,

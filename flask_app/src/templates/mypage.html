@@ -14,12 +14,27 @@
 
 
 {% block content %}
-<div class="container">
+<div style="margin-top: 5%;"></div>
+<div class="container logoList">
+    <h3>생성된 로고</h3><br>
     <section class="main-section">
-        <div class="card shadow-lg p-4" style="border-radius: 15px;">
-            <a>생성된 이미지</a>
-            <img src="static/img/logo.jpg"/>
+        {% for data in userData %}
+        <div class="card shadow-md p-4" style="border-radius: 15px;">
+
+            
+            <img src=  {{data.logo_src}} />
+            
+            {% if data.prompt %}
+                <a>입력 프롬프트</a>
+                <a>{{ data.prompt }}</a>
+            {% endif %}
+            
+            
+            
         </div>
+
+        {% endfor %}
     </section>
+
 </div>
 {% endblock %}

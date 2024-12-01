@@ -1,7 +1,5 @@
-import os
-import requests
 from decorators import login_required
-from flask import Flask, Blueprint, request, redirect, jsonify,render_template, session
+from flask import Blueprint, request, jsonify, session
 from logo_model import model
 import logging
 from model import db

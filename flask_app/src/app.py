@@ -1,8 +1,8 @@
 import os
 from dotenv import load_dotenv
-from flask import Flask, render_template, session, redirect,Response, request
+from flask import Flask,  session, redirect, request
 from datetime import timedelta
-import routes.logo_generate, logging
+import logging
 from routes.main import main
 from routes.kakao import kakao
 from routes.logo_generate import logo_generate

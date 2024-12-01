@@ -1,8 +1,6 @@
-import os
-import requests
 from routes.kakao import kakaoLogout
 from decorators import login_required
-from flask import Flask, Blueprint, request, redirect, jsonify,render_template, session
+from flask import  Blueprint, request, redirect, jsonify,render_template, session
 from model import db
 
 main = Blueprint('main', __name__)

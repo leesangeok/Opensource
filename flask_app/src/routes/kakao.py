@@ -1,7 +1,7 @@
 import os
 import requests, logging
 from model import db
-from flask import Flask, Blueprint, request, redirect, jsonify
+from flask import  Blueprint, request, redirect, jsonify
 from dotenv import load_dotenv
 
 

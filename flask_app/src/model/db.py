@@ -1,7 +1,5 @@
 from pymongo import MongoClient
 from pymongo.errors import PyMongoError
-
-from flask import Response, request
 from datetime import datetime
 import os
 import logging 

@@ -7,6 +7,6 @@ def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if 'user_id' not in session or 'access_token' not in session:
-            return redirect('/')  
+            return redirect('/')
         return f(*args, **kwargs)
     return decorated_function

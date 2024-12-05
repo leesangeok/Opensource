@@ -12,11 +12,12 @@ import urllib.parse
 import hashlib
 
 # GPU 설정
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+torch.cuda.set_per_process_memory_fraction(0.5, device=torch.cuda.current_device())
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 torch.cuda.set_device(0)
 
 # 모델 로드 및 float32로 설정
-pipe = DiffusionPipeline.from_pretrained("./stable-diffusion-v1-5", torch_dtype=torch.float32)
+pipe = DiffusionPipeline.from_pretrained("./stable-diffusion-v1-5-512-finetuned-epoch3", torch_dtype=torch.float32)
 pipe = pipe.to("cuda")
 
 # 기존 스케줄러를 DDIMScheduler로 교체
@@ -48,11 +49,11 @@ optimizer = torch.optim.AdamW(
 scaler = torch.cuda.amp.GradScaler()
 
 # CSV 파일 초기화
-csv_file_path = "training_loss_log.csv"
-if not os.path.exists(csv_file_path):
-    with open(csv_file_path, mode="w", newline="") as file:
-        writer = csv.writer(file)
-        writer.writerow(["Epoch", "Step", "Loss"])
+csv_file_path = "training512_loss_log.csv"
+# if not os.path.exists(csv_file_path):
+#     with open(csv_file_path, mode="w", newline="") as file:
+#         writer = csv.writer(file)
+#         writer.writerow(["Epoch", "Step", "Loss"])
 
 # 데이터셋 클래스 정의
 class CustomDataset(Dataset):
@@ -96,7 +97,7 @@ class CustomDataset(Dataset):
 
 # 이미지 전처리 설정
 transform = transforms.Compose([
-    transforms.Resize((1024, 1024)),
+    transforms.Resize((512, 512)),
     transforms.ToTensor(),
     transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])  # 각 채널에 대해 정규화
 ])
@@ -106,7 +107,7 @@ train_image_root = "/home/oss_1/data/240.심볼(로고) 생성 데이터/01-1.�
 train_label_root = "/home/oss_1/data/240.심볼(로고) 생성 데이터/01-1.정식개방데이터/Training/02.라벨링데이터"
 
 train_dataset = CustomDataset(train_image_root, train_label_root, transform=transform)
-train_dataloader = DataLoader(train_dataset, batch_size=2, shuffle=True, num_workers=8)
+train_dataloader = DataLoader(train_dataset, batch_size=4, shuffle=True, num_workers=8)
 
 
 # 학습 루프 설정
@@ -154,65 +155,13 @@ for epoch in range(epochs):
             scaler.step(optimizer)
             scaler.update()
 
-            # 로깅 및 이미지 복원
+            # 로깅
             if step % 100 == 0:
-                with torch.no_grad():
-                    # 첫 번째 샘플만 처리 (또는 전체 배치 처리 가능 여부에 따라)
-                    idx = 0  # 또는 원하는 인덱스
-
-                    # timestep은 스칼라 값이어야 합니다.
-                    t = timesteps[idx].item()
-
-                    # 필요한 텐서 선택
-                    n_latent = noisy_latents[idx:idx+1]
-                    n_pred = noise_pred[idx:idx+1]
-
-                    # scheduler.step 호출
-                    scheduler_output = scheduler.step(
-                        model_output=n_pred,
-                        timestep=t,
-                        sample=n_latent,
-                        eta=0.0
-                    )
-                    reconstructed_latents = scheduler_output.prev_sample
-
-                    # VAE 디코더를 통해 이미지 복원
-                    reconstructed_latents = reconstructed_latents / vae.config.scaling_factor
-                    reconstructed_images = vae.decode(reconstructed_latents).sample
-                    
-                    # 이미지 후처리 및 저장
-                    for idx, reconstructed_image in enumerate(reconstructed_images):
-                        # 이미지 범위를 [-1, 1]에서 [0, 1]로 변환
-                        reconstructed_image = (reconstructed_image / 2 + 0.5).clamp(0, 1)
-                    
-                        # 텐서를 CPU로 이동하고 PIL 이미지로 변환
-                        reconstructed_image = reconstructed_image.cpu()
-                        pil_image = to_pil_image(reconstructed_image)
-                    
-                        # 캡션을 파일명에 사용하기 위해 처리
-                        caption = captions[idx]
-                    
-                        # 파일명에 사용할 수 없는 문자 제거 및 공백 처리
-                        # 여기서는 파일명에 안전한 방식으로 URL 인코딩을 사용합니다.
-                        sanitized_caption = urllib.parse.quote(caption, safe='')
-                    
-                        # 파일명 길이 제한 (예: 100자로 제한)
-                        max_filename_length = 100
-                        if len(sanitized_caption) > max_filename_length:
-                            sanitized_caption = sanitized_caption[:max_filename_length]
-                    
-                        # 이미지 저장 디렉토리 생성
-                        save_dir = f"reconstructed_images/epoch_{epoch+1}"
-                        os.makedirs(save_dir, exist_ok=True)
-
-                        # 이미지 파일명 지정 및 저장
-                        image_filename = f"{save_dir}/step_{step}_sample_{idx}_{sanitized_caption}.png"
-                        pil_image.save(image_filename)
 
                 pbar.set_postfix({'loss': loss.item()})
-                with open(csv_file_path, mode="a", newline="") as file:
-                    writer = csv.writer(file)
-                    writer.writerow([epoch+1, step, loss.item()])
+                # with open(csv_file_path, mode="a", newline="") as file:
+                #     writer = csv.writer(file)
+                #     writer.writerow([epoch+1, step, loss.item()])
 
         # 각 epoch 이후 모델 체크포인트 저장
-        pipe.save_pretrained(f"stable-diffusion-v1-5-finetuned-epoch{epoch+1}")
+        pipe.save_pretrained(f"stable-diffusion-v1-5-512-finetuned-epoch{epoch}")

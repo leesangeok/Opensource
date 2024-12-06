@@ -34,10 +34,10 @@ requests==2.31.0
 ```
 
 # AI 모델 학습
-이 모델은 [심볼(로고) 생성 데이터](https://aihub.or.kr/aihubdata/data/view.do?currMenu=115&topMenu=100&aihubDataSe=data&dataSetSn=71440)데이터셋을 사용하여 학습되었습니다. 데이터셋은 [데이터셋 설명]으로 구성되어 있으며, 총 583,725장의 샘플이 포함되어 있습니다. 
+이 모델은 [심볼(로고) 생성 데이터](https://aihub.or.kr/aihubdata/data/view.do?currMenu=115&topMenu=100&aihubDataSe=data&dataSetSn=71440){:target="_blank"}데이터셋을 사용하여 학습되었습니다. 데이터셋은 [데이터셋 설명]으로 구성되어 있으며, 총 583,725장의 샘플이 포함되어 있습니다. 
 
 모델 학습은 다음과 같은 방법으로 진행되었습니다:
-- **Fine-Tuning**: 기존의 [Stable Diffusion 1.5 모델](https://huggingface.co/stable-diffusion-v1-5/stable-diffusion-v1-5)을 기반으로 하여, [특정 하이퍼파라미터]를 조정하여 학습하였습니다.
+- **Fine-Tuning**: 기존의 [Stable Diffusion 1.5 모델](https://huggingface.co/stable-diffusion-v1-5/stable-diffusion-v1-5){:target="_blank"}을 기반으로 하여, [특정 하이퍼파라미터]를 조정하여 학습하였습니다.
 - **학습 과정**: 모델의 성능을 최적화하기 위해 `text_encoder`와 `unet`을 학습시켰습니다. 
   - **에포크 수**: 10
   - **배치 크기**: 4

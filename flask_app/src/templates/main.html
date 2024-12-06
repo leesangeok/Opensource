@@ -16,11 +16,11 @@
 {% block content %}
 <div class="home"> </div>
 <section class="main-section ">
-    <h2>Welcome to the Symbol Logo Generator</h2>
-    <p>Generate your custom symbol logos with our AI-powered tool.</p>
+    <h2>환영합니다! <br>나만의 감각적인 심볼 로고를 만들 준비 되셨나요?</h2>
+    <p>원하시는 아이디어나 느낌만 알려주시면, AI가 찰떡같이 만들어 드릴게요!</p>
     <div class="button-container">
         {% if session['user_id'] %}
-        <button class="btn btn-lg custom-button" onclick="location.href='/generate'">Logo Generate</button>
+        <button class="btn btn-lg custom-button" onclick="location.href='/generate'">로고 생성하기</button>
         {% else %}
             <div id="kakao" class="kakao_button">
             

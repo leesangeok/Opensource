@@ -42,12 +42,15 @@ def access_token() :
     access_token = res.json()["access_token"]
     
     # 사용자구분을 위해 id 값을 추출
-    user_id = getUserInfo(access_token)["id"]
+    userInfo = getUserInfo(access_token)
     
+    user_id = userInfo["id"]
+    nickname = userInfo['properties']['nickname']
+
     # db 저장
     db.signUser(user_id)
 
-    return redirect(f"/getSession?user_id={user_id}&access_token={access_token}")
+    return redirect(f"/getSession?user_id={user_id}&access_token={access_token}&nickname={nickname}")
     
 
 # Access Token을 이용해서 user 정보 가져오기

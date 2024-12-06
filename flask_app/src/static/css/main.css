@@ -1,22 +1,32 @@
-.navbar {
+
+  .navbar {
     background-color: #2c3e50;
   }
+
   .navbar-brand, .nav-link {
     color: #fff !important;
   }
+
   .nav-link:hover {
     color: #ddd !important;
   }
 
-  
-  .footer {
-  background-color: #2c3e50;
-  color: white;
-  padding: 20px 0;
-  position: fixed;
-  bottom: 0;
-  width: 100%;
+  .swiper {
+    /* width: 500px; */
+    /* height: 300px; */
+
   }
+
+  .footer {
+    background-color: #2c3e50;
+    color: white;
+    padding: 20px 0;
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    z-index: 10;
+  }
+
   .footer a {
     color: #ddd;
   }
@@ -24,7 +34,9 @@
     color: #fff;
     text-decoration: none;
   }
-
+  .nickname {
+    color: #fff;
+  }
   main {
     padding: 10% 10%;
     margin: 0 auto;
@@ -88,8 +100,10 @@
   }
 
   .home {
-    margin-top: 15%;
+    margin-top: 25%; 
+
   }
+
 
   #page-selector {
     background-color: transparent;
@@ -133,14 +147,24 @@
   margin-bottom: 20px;
 }
 
-  @media (max-width: 992px) { 
+.mypageBlank {
+  margin-top: 10%;
+}
+
+  @media (max-width: 932px) { 
     .end {
         display: flex; 
         justify-content: center; 
         width: 100%;
     }
 
-    .mainBody {
-      margin-top: 20%; 
-  }
+    .blank {
+      margin-top: 20%;
+    }
+
+    .home {
+      margin-top: 40%;
+    }
+
+
   }

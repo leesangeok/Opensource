@@ -1,3 +1,11 @@
+document.getElementById('manual').addEventListener('click', function () {
+    setTimeout(function () { // Collapse가 열릴 시간을 기다림
+        document.getElementById('collapseExample').scrollIntoView({
+            behavior: 'smooth'
+        });
+    }, 300); // Collapse 애니메이션이 끝날 때까지 약간의 딜레이 (기본값 300ms)
+});
+
 
 function navigate() {
     const selectElement = document.getElementById('page-selector');
@@ -19,7 +27,6 @@ function navigate() {
                 window.location.href = selectedValue;
               });    
         }
-        
     }
 }
 
@@ -52,7 +59,7 @@ function sendLogoDescription() {
         .catch(error => {
             Swal.fire({
                 title: "Error",
-                text: '죄송합니다. 현재 서버에서 문제가 발생했습니다.',
+                html: '죄송합니다. <br>현재 서버에서 문제가 발생했습니다.<br>계속 될 시 관리자에게 문의해주세요.',
                 icon: "error",
                 confirmButtonText : "확인"
             });  
@@ -63,3 +70,20 @@ function sendLogoDescription() {
 
 
 
+const swiper = new Swiper('.swiper', {
+    // Optional parameters
+    autoplay: {
+      delay: 5000, // 자동 재생 시간 (1초)
+    },
+    loop: true, // 슬라이드 무한 반복
+    freeMode: true, // freemode 활성화
+    pagination: {
+      el: '.swiper-pagination', // pagination 요소
+      clickable: true, // pagination 클릭 가능
+    },
+    scrollbar: {
+      el: '.swiper-scrollbar', // 스크롤바 요소
+      draggable: true, // 스크롤바 드래그 가능
+    },
+  });
+  

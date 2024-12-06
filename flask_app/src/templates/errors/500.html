@@ -1,0 +1,29 @@
+{% extends "layout.html" %}
+
+
+{% block select %}
+<select id="page-selector" class="form-control" aria-label="Page selector"   onchange="navigate()">
+    <option value="/" selected>Home</option>
+    <option value="/generate" >Generation</option>
+    <option value="/myPage">My Page</option>
+    {% if session['user_id'] %}
+      <option value="/logout">Logout</option>
+    {% endif %}
+</select>
+{% endblock %}
+
+
+{% block content %}
+<div class="home"> </div>
+<section class="main-section ">
+    <h1>500 Error</h1>
+    <br>
+    <h2> 서버 에러입니다. <br>관리자에게 문의해주시길 바랍니다.</h2>
+    
+    <div class="button-container">
+
+        <button class="btn btn-lg custom-button" onclick="location.href='/'">홈 화면 이동</button>
+
+    </div>
+</section>
+{% endblock %}

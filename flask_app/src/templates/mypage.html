@@ -14,24 +14,29 @@
 
 
 {% block content %}
-<div style="margin-top: 5%;"></div>
 <div class="container logoList">
     <h3>생성된 로고</h3><br>
     <section class="main-section">
-        {% for data in userData %}
-        <div class="card shadow-md p-4" style="border-radius: 15px;">
 
-            
-            <img src=  {{data.logo_src}} />
-            
-            {% if data.prompt %}
-                <a>입력 프롬프트</a>
-                <a>{{ data.prompt }}</a>
-            {% endif %}
-            
-            
-            
-        </div>
+        {% if userData == [] %}
+            <a> 없음 </a>
+        {% endif %}
+
+        {% for logoData in userData %}
+
+
+            <a>{{ logoData.createDate }}</a>
+
+            {% for logo in logoData.data %}
+            <div class="card shadow-md p-4" style="border-radius: 15px;">
+
+                {% if logo.prompt %}
+                    <img src=  {{logo.logo_src}} />
+                    <a>입력 프롬프트</a>
+                    <a>{{ logo.prompt }}</a>
+                {% endif %}
+            </div>
+            {% endfor %}
 
         {% endfor %}
     </section>

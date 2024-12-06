@@ -1,0 +1,62 @@
+{% extends "layout.html" %}
+
+
+{% block select %}
+<select id="page-selector" class="form-control" aria-label="Page selector"   onchange="navigate()">
+    <option value="/" >Home</option>
+    <option value="/generate" >Generation</option>
+    <option value="/myPage" selected>My Page</option>
+    {% if session['user_id'] %}
+      <option value="/logout">Logout</option>
+    {% endif %}
+</select>
+{% endblock %}
+
+
+{% block content %}
+<div class="mypageBlank"></div>
+<div class="container logoList">
+    
+    <h2>생성된 로고</h2><br>
+    <section class="main-section">
+
+        {% if userData == [] %}
+            <a> 생성된 로고가 없습니다 지금당장 만들어보세요! </a>
+        {% endif %}
+
+        {% for logoData in userData %}
+
+            <br>
+            <span class="fs-2 mt-5" >{{ logoData.createDate }}</span>
+                <!-- Slider main container -->
+                <div class="swiper card shadow-md p-4" style="border-radius: 15px;">
+                    <!-- Additional required wrapper -->
+                    <div class="swiper-wrapper">
+                        {% for logo in logoData.data %}
+                    
+                            {% if logo.prompt %}
+                                <!-- Slides -->
+                                <div class="swiper-slide">
+                                    <img style="width: 100%;"  src =  {{logo.logo_src}} />
+                                    <br>
+                                    <p class="fs-5">입력 프롬프트 : {{ logo.prompt }}</p>
+                                    
+                                    
+                                </div>
+                            {% endif %}
+
+                        {% endfor %}
+                    </div>
+                    <!-- Pagination -->
+                    <div class="swiper-pagination"></div>
+
+                </div>
+
+
+        {% endfor %}
+    </section>
+
+
+
+</div>
+{% endblock %}

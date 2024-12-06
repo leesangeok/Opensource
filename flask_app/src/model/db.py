@@ -50,7 +50,14 @@ def insert_user(user_id) :
         logging.info("[id= %s] user 정보 저장 성공 ", user_id)
     except PyMongoError as e:
         logging.error("[id= %s] insert_user() DB Error = %s", user_id,  e)
-    
+
+
+def findByCreateDate(date) :
+    try :
+        return collection.find_one({"logo.createDate" : date}) is not None
+        
+    except PyMongoError as e :
+        logging.error("DB Error = %s",  e)
 
 # def insert_logo_Info(user_id, logo_src, logo_name) :
 #     try :
@@ -73,19 +80,68 @@ def insert_user(user_id) :
     
 
 
+# def insert_logo_Info(user_id, logo_src, prompt) :
+#     try :
+#         doc = findByUserId(user_id)
+#         print(doc) 
+
+#         print(user_id , logo_src, datetime.now().strftime('%Y-%m-%d'))
+#         result = collection.update_one(
+#             {"user_id" : user_id},
+#             {"$push" : {"logo" : {
+#                                     "logo_src" : logo_src,
+#                                     "prompt" : prompt,
+#                                    "createDate" : datetime.now()}}}
+#         )
+
+#         if result.modified_count > 0:
+#             logging.info("[id= %s] logo DB 저장 성공 [logo_src = %s]", user_id, logo_src )
+#             return True
+#         else:
+#             logging.error("[id= %s] logo DB 저장 실패 [logo_src = %s] ", user_id, logo_src )
+#             return False
+        
+#     except PyMongoError as e:
+#         logging.error("[id= %s] [logo_src = %s] DB Error : %s", user_id, logo_src, e)
+#         return False
+    
+
+
 def insert_logo_Info(user_id, logo_src, prompt) :
     try :
-        doc = findByUserId(user_id)
-        print(doc) 
+        now = datetime.now()
+        date = now.strftime('%Y-%m-%d')
 
-        print(user_id , logo_src, datetime.now())
-        result = collection.update_one(
-            {"user_id" : user_id},
-            {"$push" : {"logo" : {
-                                    "logo_src" : logo_src,
-                                    "prompt" : prompt,
-                                   "createDate" : datetime.now()}}}
-        )
+        # date 필드 체크 후 있으면 해당 날짜에 로고 정보 추가
+        if findByCreateDate(date) : 
+            result = collection.update_one(
+                {"user_id": user_id, "logo.createDate": date},
+                {"$push": {
+                "logo.$.data": {
+                    "logo_src": logo_src,
+                    "prompt": prompt
+                        }
+                    }
+                }
+            )
+        else :
+            result = collection.update_one(
+                {"user_id": user_id},
+                    {"$push": {
+                        "logo": {
+                            "createDate": date,
+                            "data": [
+                                {
+                                    "logo_src": logo_src,
+                                    "prompt": prompt
+                                }
+                            ]
+                        }
+                    }
+                }
+            )
+
+
 
         if result.modified_count > 0:
             logging.info("[id= %s] logo DB 저장 성공 [logo_src = %s]", user_id, logo_src )
@@ -98,5 +154,3 @@ def insert_logo_Info(user_id, logo_src, prompt) :
         logging.error("[id= %s] [logo_src = %s] DB Error : %s", user_id, logo_src, e)
         return False
     
-
-

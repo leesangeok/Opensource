@@ -1,5 +1,9 @@
 {% extends "layout.html" %}
 
+{%block js%}
+<script src="static/js/generation_page.js"></script>
+{% endblock %}
+
 {% block select %}
 <select id="page-selector" class="form-control" aria-label="Page selector"   onchange="navigate()">
     <option value="/">Home</option>
@@ -46,3 +50,6 @@
     </section>
 </div>
 {% endblock %}
+
+
+

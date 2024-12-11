@@ -24,6 +24,12 @@ Stable Diffusion 1.5 모델을 Fine-Tunning하여 프롬프트를 입력하면 �
 - SESSION KEY
   - SECRET_KEY= 임의의 UUID 등 값 설정
 
+#### 실행방법
+```
+cmd 실행
+flask_app/src 이동
+python app.py 로 실행
+```
 
 ### Requirements
 ```
@@ -46,3 +52,10 @@ requests==2.31.0
   - **최적화 알고리즘**: AdamW Optimizer
   - **GradScaler**: 자동 혼합 정밀도(Amp) 사용
   - **데이터 증강**: 이미지 크기 조정 및 정규화 적용
+ 
+
+## fix
+- 24.12.7 swiper 미작동현상 해결
+- 24.12.6 swiper , error page 추가 및 날짜별 로고 데이터 DB 처리
+- 24.12.1 sweetalert2 적용
+- 24.11.24 MongoDB find 문제 해결

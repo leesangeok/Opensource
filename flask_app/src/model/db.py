@@ -112,6 +112,8 @@ def insert_logo_Info(user_id, logo_src, prompt) :
         now = datetime.now()
         date = now.strftime('%Y-%m-%d')
 
+        logging.info("[id= %s] [logo_src = %s] [prompt = %s] [date = %s]", user_id, logo_src, prompt, date)
+
         # date 필드 체크 후 있으면 해당 날짜에 로고 정보 추가
         if findByCreateDate(date) : 
             result = collection.update_one(

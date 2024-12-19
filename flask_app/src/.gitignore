@@ -3,3 +3,8 @@ __pycache__
 
 key.env
 .env
+
+/stable-diffusion-v1-5-512-finetuned-epoch10
+/stable-diffusion-v1-5-512-finetuned-epoch6
+stable-diffusion-v1-5-512-finetuned-epoch6
+stable-diffusion-v1-5-512-finetuned-epoch10

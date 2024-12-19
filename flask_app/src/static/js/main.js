@@ -1,12 +1,3 @@
-document.getElementById('manual').addEventListener('click', function () {
-    setTimeout(function () { // Collapse가 열릴 시간을 기다림
-        document.getElementById('collapseExample').scrollIntoView({
-            behavior: 'smooth'
-        });
-    }, 300); // Collapse 애니메이션이 끝날 때까지 약간의 딜레이 (기본값 300ms)
-});
-
-
 function navigate() {
     const selectElement = document.getElementById('page-selector');
     const selectedValue = selectElement.value;
@@ -34,7 +25,11 @@ function navigate() {
 
 function sendLogoDescription() {
     const logoDescription = document.getElementById("logoDescription").value;
+    const loadingSpinner = document.getElementById("loading");
 
+    loadingSpinner.style.display = "inline-block"; // 로딩 스피너 표시 
+
+    
     // 프롬프트 입력 필수 안내
     if (logoDescription.length == 0) {
         Swal.fire({
@@ -43,6 +38,10 @@ function sendLogoDescription() {
             icon: "warning",
             confirmButtonText : "확인"
         });    
+
+        // 로딩 스피너 숨기기
+        loadingSpinner.style.display = "none"; 
+
     } else {
         fetch("/logoGenerate", {
             method: "POST",
@@ -54,7 +53,11 @@ function sendLogoDescription() {
         .then(response => {
     
             if (!response.ok) throw new Error("Network response was not ok");
-            return response.json();
+            window.location.href = "/myPage";
+        })
+        .then(data => {
+            // 로딩 스피너 숨기기
+            loadingSpinner.style.display = "none"; 
         })
         .catch(error => {
             Swal.fire({

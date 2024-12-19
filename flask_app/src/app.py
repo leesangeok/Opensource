@@ -1,4 +1,4 @@
-import os
+import os, sys
 from dotenv import load_dotenv
 from flask import Flask,  session, redirect, request, render_template
 from datetime import timedelta
@@ -8,15 +8,27 @@ from routes.kakao import kakao
 from routes.logo_generate import logo_generate
 from functools import wraps
 
+from diffusers import DiffusionPipeline
+import torch
+
 app = Flask(__name__)
 
 load_dotenv("key.env")
 app.secret_key = os.getenv("SECRET_KEY")
+# GPU 설정: CUDA_VISIBLE_DEVICES를 먼저 설정
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+sys.stdin.reconfigure(encoding='utf-8')
+
+
 
 # 세션 설정 
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours= 1) # 세션 expire 1시간
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 app.config['SESSION_COOKIE_HTTPONLY'] = True
+
+
+
+
 
 # log 레벨을 INFO로 설정
 logging.basicConfig(level=logging.INFO)
@@ -54,6 +66,20 @@ def unauthorized(e) :
 def internet_server_error(e) : 
     return render_template('errors/500.html'), 500
 
+
+@app.before_first_request
+def load_model():
+    # 모델 로드 및 float16로 설정
+    pipe = DiffusionPipeline.from_pretrained(
+        r"./logo_model/stable-diffusion-v1-5-512-finetuned-epoch10",  # 경로 수정
+    torch_dtype=torch.float16
+    )
+
+    # 장치를 cuda:0으로 설정 (CUDA_VISIBLE_DEVICES에 따라 GPU 1에 할당됨)
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    pipe = pipe.to(device)
+    app.config['pipe'] = pipe
+    
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)

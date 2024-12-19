@@ -1,5 +1,7 @@
 {% extends "layout.html" %}
 
+
+
 {% block select %}
 <select id="page-selector" class="form-control" aria-label="Page selector"   onchange="navigate()">
     <option value="/">Home</option>
@@ -38,11 +40,20 @@
                     class="form-control" 
                     id="logoDescription" 
                     placeholder="로고 설명 입력"/>
+
+
             </div>
             <button class="btn custom-button" type="button" onclick="sendLogoDescription()">
                 생성 시작
+                <div class="spinner-border text-success" id="loading" role="status" style="display: none;">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
             </button>
         </div>
     </section>
 </div>
+{% endblock %}
+
+{% block script %} 
+<script src="static/js/gen.js"></script>
 {% endblock %}

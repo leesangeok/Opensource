@@ -74,7 +74,6 @@ function sendLogoDescription() {
 
 
 const swiper = new Swiper('.swiper', {
-    // Optional parameters
     autoplay: {
       delay: 5000, // 자동 재생 시간 (1초)
     },

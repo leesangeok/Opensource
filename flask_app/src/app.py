@@ -20,7 +20,16 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 sys.stdin.reconfigure(encoding='utf-8')
 
 
+    # 모델 로드 및 float16로 설정
+pipe = DiffusionPipeline.from_pretrained(
+    r"./logo_model/stable-diffusion-v1-5-512-finetuned-epoch10",  # 경로 수정
+    torch_dtype=torch.float16
+)
 
+# 장치를 cuda:0으로 설정 (CUDA_VISIBLE_DEVICES에 따라 GPU 1에 할당됨)
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+pipe = pipe.to(device)
+app.config['pipe'] = pipe
 # 세션 설정 
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours= 1) # 세션 expire 1시간
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
@@ -67,18 +76,9 @@ def internet_server_error(e) :
     return render_template('errors/500.html'), 500
 
 
-@app.before_first_request
-def load_model():
-    # 모델 로드 및 float16로 설정
-    pipe = DiffusionPipeline.from_pretrained(
-        r"./logo_model/stable-diffusion-v1-5-512-finetuned-epoch10",  # 경로 수정
-    torch_dtype=torch.float16
-    )
+# @app.before_first_request
+# def load_model():
 
-    # 장치를 cuda:0으로 설정 (CUDA_VISIBLE_DEVICES에 따라 GPU 1에 할당됨)
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    pipe = pipe.to(device)
-    app.config['pipe'] = pipe
     
 
 if __name__ == '__main__':
